@@ -14,11 +14,14 @@ LoadTester -- HTTP --> SpringBootCompletableFutureApplication
 
 1. RemoteServer1, RemoteServer2 실행
   - RemoteService2 에서 에러 유발 테스트 가능
+
 1. SpringBootCompletableFutureApplication 실행
   - ExecutorConfig에서 ThreadPoolTaskExecutor의 설정을 바꿔가며 테스트 가능
+
 1. JDK_HOME/bin 의 jmc 실행
   - SpringBootCompletableFutureApplication의 MBean 실행
   - 생성되는 Thread 현황 확인 가능
+
 1. LoadTester 실행
   - Sync/Async 비교 테스트 가능
 
