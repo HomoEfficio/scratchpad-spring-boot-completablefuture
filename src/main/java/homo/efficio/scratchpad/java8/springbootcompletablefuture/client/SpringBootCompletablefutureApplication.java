@@ -1,4 +1,4 @@
-package homo.efficio.scratchpad.java8.springbootcompletablefuture;
+package homo.efficio.scratchpad.java8.springbootcompletablefuture.client;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

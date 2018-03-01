@@ -25,6 +25,8 @@ repositories {
 
 dependencies {
 	compile('org.springframework.boot:spring-boot-starter-web')
+//	compile('org.springframework.boot:spring-boot-devtools')
+	compile group: 'io.netty', name: 'netty-all', version: '4.1.22.Final'
 	compileOnly('org.projectlombok:lombok')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
