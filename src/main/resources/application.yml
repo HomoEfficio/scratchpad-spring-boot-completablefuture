@@ -1,1 +1,13 @@
 server.tomcat.max-threads: 1
+
+threadpool.taskexecutor.single:
+  threadNamePrefix: pool-single
+  corePoolSize: 10
+  maxPoolSize: 10
+  queueCapacity: 10
+  keepAliveSeconds: 5
+
+---
+spring.profiles: test
+
+

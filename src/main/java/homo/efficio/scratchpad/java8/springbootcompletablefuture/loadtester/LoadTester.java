@@ -24,6 +24,8 @@ public class LoadTester {
         RestTemplate rt = new RestTemplate();
         String urlSync = "http://localhost:8080/normal/sync?index=";
         String urlASync = "http://localhost:8080/normal/async?index=";
+        String urlCompletableFutureService = "http://localhost:8080/normal/completable-future-service?index=";
+        String urlCompletableFutureController = "http://localhost:8080/normal/completable-future-controller?index=";
 
         StopWatch mainWatch = new StopWatch();
         mainWatch.start();
@@ -37,7 +39,8 @@ public class LoadTester {
 
                 // Sync와 Async 번갈아 가며 비교 테스트
 //               String result = rt.getForObject(urlSync + index, String.class);
-                String result = rt.getForObject(urlASync + index, String.class);
+//                String result = rt.getForObject(urlASync + index, String.class);
+                String result = rt.getForObject(urlCompletableFutureService + index, String.class);
 
                 subWatch.stop();
                 log.info(String.format("%s %s Elapsed: %s", index, result, subWatch.getTotalTimeSeconds()));

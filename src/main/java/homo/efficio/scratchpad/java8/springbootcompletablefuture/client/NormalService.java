@@ -4,10 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncListenableTaskExecutor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.AsyncRestTemplate;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author homo.efficio@gmail.com
@@ -63,4 +67,34 @@ public class NormalService {
         final String url = "http://localhost:8082/server2/service2?str=" + str;
         return art.getForEntity(url, String.class);
     }
+
+    public Callable<String> returningCallable() {
+        return () -> {
+            System.out.println("Thread name returning Callable: " + Thread.currentThread().getName());
+            return "Callable Returning Controller";
+        };
+    }
+
+    @Async
+    public void showSpringAsyncWithoutValue() {
+        System.out.println("Thread name of @Async without name: " + Thread.currentThread().getName());
+    }
+
+    @Async("tenThreadTaskExecutor")
+    public CompletableFuture<String> showFromCompletableFuture(int index) throws InterruptedException {
+        System.out.println("Inside of @Async+CompletableFuture method, request index: " + index + ", thread name: " + Thread.currentThread().getName());
+        Thread.sleep(2000);
+        String info = "Result of @Async+CompletableFuture method, request index: " + index + ", thread name: " + Thread.currentThread().getName();
+        System.out.println(info);
+        return CompletableFuture.completedFuture(info);
+    }
+
+    public String showRawInfo(int index) throws InterruptedException {
+        System.out.println("Inside of normal Sync method, request index: " + index + ", thread name: " + Thread.currentThread().getName());
+        Thread.sleep(2000);
+        String info = "Result of normal Sync method, request index: " + index + ", thread name: " + Thread.currentThread().getName();
+        System.out.println(info);
+        return info;
+    }
+
 }

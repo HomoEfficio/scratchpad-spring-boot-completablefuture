@@ -2,6 +2,8 @@ package homo.efficio.scratchpad.java8.springbootcompletablefuture.client;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -23,9 +26,12 @@ public class NormalController {
 
     private final NormalService normalService;
 
+    private final TaskExecutor taskExecutor;
+
     @Autowired
-    public NormalController(NormalService normalService) {
+    public NormalController(NormalService normalService, @Qualifier("tenThreadTaskExecutor") TaskExecutor taskExecutor) {
         this.normalService = normalService;
+        this.taskExecutor = taskExecutor;
     }
 
     @GetMapping("/sync")
@@ -60,6 +66,47 @@ public class NormalController {
                 });
 
         return dr;
+    }
+
+    @GetMapping("/thread-name/async-without-value")
+    public void getThreadNameAsyncwithoutValue() {
+        this.normalService.showSpringAsyncWithoutValue();
+    }
+
+    @GetMapping("/callable")
+    public Callable<String> returningCallable() {
+        return this.normalService.returningCallable();
+    }
+
+    @GetMapping("/completable-future-service")
+    public CompletableFuture<String> returningCompletableFutureFromService(int index) throws InterruptedException {
+
+        CompletableFuture<String> stringCompletableFuture = this.normalService.showFromCompletableFuture(index);
+
+        System.out.println("Right after invoking CompletableFuture with Request index: " + index + " in thread: " + Thread.currentThread().getName());
+
+        return stringCompletableFuture;
+    }
+
+    @GetMapping("/completable-future-controller")
+    public CompletableFuture<String> returningCompletableFutureFromController(int index) {
+
+        CompletableFuture<String> stringCompletableFuture = CompletableFuture.supplyAsync(
+                () -> {
+                    String result = "";
+                    try {
+                        result = this.normalService.showRawInfo(index);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    return result;
+                },
+                this.taskExecutor
+        );
+
+        System.out.println("Right after invoking Async Service without CompletableFuture with Request index: " + index + " in thread: " + Thread.currentThread().getName());
+
+        return stringCompletableFuture;
     }
 
     private <T> CompletableFuture<T> getCfFromLf(ListenableFuture<T> lf) {
