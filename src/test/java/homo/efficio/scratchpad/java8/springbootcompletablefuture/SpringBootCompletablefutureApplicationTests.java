@@ -1,5 +1,6 @@
 package homo.efficio.scratchpad.java8.springbootcompletablefuture;
 
+import org.apache.commons.lang3.math.NumberUtils;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -37,6 +38,23 @@ public class SpringBootCompletablefutureApplicationTests {
 
 		assertThat("".split(splitter).length).isEqualTo(1);
 		assertThat("".split(splitter)[0]).isEqualTo("");
+	}
+
+	@Test
+	public void inNumberTest() throws Exception {
+		System.out.println("NumberUtils.isCreatable(\"10\"): " + NumberUtils.isCreatable("10"));
+		System.out.println("NumberUtils.isCreatable(\"-2147483648\"): " + NumberUtils.isCreatable("-2147483648"));
+		System.out.println("NumberUtils.isCreatable(\"-2147483649\"): " + NumberUtils.isCreatable("-2147483649"));
+		System.out.println("NumberUtils.isCreatable(\"10.5\"): " + NumberUtils.isCreatable("10.5"));
+		System.out.println("NumberUtils.isCreatable(\"10.5f\"): " + NumberUtils.isCreatable("10.5f"));
+		System.out.println("NumberUtils.isCreatable(\"10..5\"): " + NumberUtils.isCreatable("10..5"));
+		System.out.println();
+		System.out.println("NumberUtils.isParsable(\"10.5\"): " + NumberUtils.isParsable("10.5"));
+		System.out.println("NumberUtils.isParsable(\"10.5f\"): " + NumberUtils.isParsable("10.5f"));
+		System.out.println("NumberUtils.isParsable(\"10..5\"): " + NumberUtils.isParsable("10..5"));
+		System.out.println();
+		System.out.println("NumberUtils.isDigits(\"10.5\"): " + NumberUtils.isDigits("10.5"));
+		System.out.println("NumberUtils.isDigits(\"-2147483648\"): " + NumberUtils.isDigits("-2147483648"));
 	}
 
 }

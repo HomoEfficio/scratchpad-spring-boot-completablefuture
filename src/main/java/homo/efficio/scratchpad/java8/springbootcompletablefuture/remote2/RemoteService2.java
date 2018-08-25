@@ -18,7 +18,7 @@ public class RemoteService2 {
     public String service(String str) throws InterruptedException {
         Thread.sleep(500);
 //        throw new RuntimeException();  // 고의로 에러 유발
-        return "***" + str + "***";
+        return "*** " + str + " ***";
     }
 
 }

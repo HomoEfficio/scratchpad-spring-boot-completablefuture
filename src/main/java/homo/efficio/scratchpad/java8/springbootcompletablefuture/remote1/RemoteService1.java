@@ -17,7 +17,7 @@ public class RemoteService1 {
     @GetMapping("/service1")
     public String service(int index) throws InterruptedException {
         Thread.sleep(500);
-        return String.format("service1-%03d", index);
+        return String.format("Result of Remote Service1-%03d", index);
     }
 
 }

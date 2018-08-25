@@ -3,13 +3,15 @@ package homo.efficio.scratchpad.java8.springbootcompletablefuture.client;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.AsyncListenableTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.web.client.AsyncRestTemplate;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.*;
 
+import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
@@ -23,6 +25,10 @@ public class NormalService {
     private RestTemplate rt;
 
     private AsyncRestTemplate art;
+
+    private SpyAsyncRestTemplate spyArt;
+
+    private TaskExecutor taskExecutor;
 
     @Autowired
     public NormalService(@Qualifier("threadTaskExecutor") AsyncListenableTaskExecutor executor) {
@@ -44,8 +50,13 @@ public class NormalService {
 
         // 아무 파라미터 없이 AsyncRestTemplate를 생성하면 SimpleAsyncTaskExecutor 사용.
         // SimpleAsyncTaskExecutor는 pool을 통해 스레드를 재사용하지 않고
-        // 필요 할 때마다 스레드를 새로 생성하므로 스레드 생성 부하가 크며 실전에 사용하면 안 됨
+        // 필요 할 때마다 스레드를 새로 생성/폐기하므로 스레드 생성 부하가 크며 실전에 사용하면 안 됨
 //        this.art = new AsyncRestTemplate();
+
+
+        this.spyArt = new SpyAsyncRestTemplate(executor);
+
+        this.taskExecutor = executor;
     }
 
     public String getResultFromRemote1(int index) {
@@ -68,16 +79,22 @@ public class NormalService {
         return art.getForEntity(url, String.class);
     }
 
+    public ListenableFuture<ResponseEntity<String>> getResultFromRemoteSpyArt(String str) {
+        final String url = "http://localhost:8082/server2/service2?str=" + str;
+        System.out.println("Thread name in Service method: " + Thread.currentThread().getName());
+        return spyArt.getForEntity(url, String.class);
+    }
+
     public Callable<String> returningCallable() {
         return () -> {
             System.out.println("Thread name returning Callable: " + Thread.currentThread().getName());
-            return "Callable Returning Controller";
+            return "Callable Returning Controller, thread-name: " + Thread.currentThread().getName();
         };
     }
 
     @Async
     public void showSpringAsyncWithoutValue() {
-        System.out.println("Thread name of @Async without name: " + Thread.currentThread().getName());
+        System.out.println("Thread name of @Async without value attribute: " + Thread.currentThread().getName());
     }
 
     @Async("tenThreadTaskExecutor")
@@ -89,6 +106,15 @@ public class NormalService {
         return CompletableFuture.completedFuture(info);
     }
 
+    @Async("tenThreadTaskExecutor")
+    public String showFromCompletableFuture2(int index) throws InterruptedException {
+        System.out.println("Inside of @Async+CompletableFuture method, request index: " + index + ", thread name: " + Thread.currentThread().getName());
+        Thread.sleep(2000);
+        String info = "Result of @Async+CompletableFuture method, request index: " + index + ", thread name: " + Thread.currentThread().getName();
+        System.out.println(info);
+        return info;
+    }
+
     public String showRawInfo(int index) throws InterruptedException {
         System.out.println("Inside of normal Sync method, request index: " + index + ", thread name: " + Thread.currentThread().getName());
         Thread.sleep(2000);
@@ -97,4 +123,35 @@ public class NormalService {
         return info;
     }
 
+    public CompletableFuture<String> combineTest() {
+        return CompletableFuture.supplyAsync(
+                () -> buildNum(new int[]{3, 1, 4})
+                , this.taskExecutor)
+                .thenCombine(
+                        CompletableFuture.supplyAsync(
+                                () -> buildNum(new int[]{})
+                                , this.taskExecutor)
+                        , (a, b) -> a + b
+                )
+                .thenApply(
+                        r -> "*** " + r + " ***"
+                );
+    }
+
+    private int buildNum(int[] digits) {
+        int result = 0;
+//        for (int i = 0, len = digits.length ; i < len ; i++) {
+//            result = result * 10 + digits[i];
+//        }
+
+//        result = Arrays.stream(digits)
+//                .reduce(0, (acc, v) -> acc * 10 + v);
+
+        Arrays.stream(digits)
+                .findFirst()
+                .ifPresent(r -> System.out.println("$$$ " + r + " $$$"));
+
+        return result;
+    }
 }
+

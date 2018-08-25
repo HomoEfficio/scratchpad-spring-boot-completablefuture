@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.task.TaskExecutor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.async.DeferredResult;
 
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 
@@ -48,18 +50,30 @@ public class NormalController {
 //        this.normalService.getResultFromRemoteAsync1(index)
 //                .addCallback(
 //                        re1 -> {
+//                            System.out.println("Thread name of art1: " + Thread.currentThread());
 //                            this.normalService.getResultFromRemoteAsync2(re1.getBody())
 //                                    .addCallback(
-//                                            re2 -> dr.setResult(re2),  // callback hell
+//                                            re2 -> {
+//                                                dr.setResult(re2);
+//                                                System.out.println("Thread name of art2: " + Thread.currentThread());
+//                                            },  // callback hell
 //                                            e -> dr.setErrorResult(e.toString())  // error 처리 중복
 //                                    );
 //                        },
 //                        e -> dr.setErrorResult(e.toString())  // error 처리 중복
 //                );
 
+
+
         getCfFromLf(this.normalService.getResultFromRemoteAsync1(index))
-                .thenCompose(re -> getCfFromLf(this.normalService.getResultFromRemoteAsync2(re.getBody())))
-                .thenAccept(re -> dr.setResult(re))
+                .thenCompose(re -> {
+                    System.out.println("Thread name of art1: " + Thread.currentThread());
+                    return getCfFromLf(this.normalService.getResultFromRemoteAsync2(re.getBody()));
+                })
+                .thenAccept((re) -> {
+                    System.out.println("Thread name of art2: " + Thread.currentThread());
+                    dr.setResult(re);
+                })
                 .exceptionally(e -> {
                     dr.setErrorResult(e.toString());
                     return null;
@@ -68,27 +82,57 @@ public class NormalController {
         return dr;
     }
 
-    @GetMapping("/thread-name/async-without-value")
-    public void getThreadNameAsyncwithoutValue() {
+    @GetMapping("/spyAsync")
+    public CompletableFuture<ResponseEntity<String>> getCompletableFuture(String any) {
+
+        ListenableFuture<ResponseEntity<String>> resultFromRemoteSpyArt = this.normalService.getResultFromRemoteSpyArt(any);
+
+        System.out.println("Right after receiving ListenableFuture, thread name: " + Thread.currentThread().getName());
+
+        return getCfFromLf(resultFromRemoteSpyArt)
+                .thenApply(re -> {
+                    System.out.println("Thread name of thenApply() of Controller: " + Thread.currentThread().getName());
+                    System.out.println("Result: " + re);
+                    return re;
+                });
+    }
+
+    @GetMapping("/thread-name/async-annotation-without-value")
+    public void getThreadNameAsyncWithoutValue() {
         this.normalService.showSpringAsyncWithoutValue();
     }
 
-    @GetMapping("/callable")
+    @GetMapping("thread-name/callable")
     public Callable<String> returningCallable() {
         return this.normalService.returningCallable();
     }
 
-    @GetMapping("/completable-future-service")
+    @GetMapping("/completablefuture-in-service")
     public CompletableFuture<String> returningCompletableFutureFromService(int index) throws InterruptedException {
 
         CompletableFuture<String> stringCompletableFuture = this.normalService.showFromCompletableFuture(index);
 
         System.out.println("Right after invoking CompletableFuture with Request index: " + index + " in thread: " + Thread.currentThread().getName());
+        System.out.println("Right after invoking, result: " + stringCompletableFuture);
 
         return stringCompletableFuture;
     }
 
-    @GetMapping("/completable-future-controller")
+    @GetMapping("/completablefuture-in-service2")
+    public CompletableFuture<String> returningCompletableFutureFromService2(int index) throws InterruptedException {
+
+        // 이렇게 @Async가 있는 곳에서 Future가 아닌 결과를 받고
+        String normalString = this.normalService.showFromCompletableFuture2(index);
+
+        System.out.println("Right after invoking CompletableFuture with Request index: " + index + " in thread: " + Thread.currentThread().getName());
+        System.out.println("Right after invoking, result: " + normalString);
+
+        // 이렇게 @Async가 없는 곳에서 CompletableFuture.completedFuture를 만들어 반환하면
+        // normalString에는 아무런 결과값이 없는 상태로 null을 반환하고 종료되버림
+        return CompletableFuture.completedFuture(normalString);
+    }
+
+    @GetMapping("/completablefuture-in-controller")
     public CompletableFuture<String> returningCompletableFutureFromController(int index) {
 
         CompletableFuture<String> stringCompletableFuture = CompletableFuture.supplyAsync(
@@ -113,5 +157,17 @@ public class NormalController {
         CompletableFuture<T> cf = new CompletableFuture<>();
         lf.addCallback(s -> cf.complete(s), e -> cf.completeExceptionally(e));
         return cf;
+    }
+
+    @GetMapping("/multivaluemap")
+    public String mvm(@RequestParam MultiValueMap multiValueMap,
+                      @RequestParam Map<String, String> paramMap) {
+
+        return multiValueMap.toString();
+    }
+
+    @GetMapping("/combine")
+    public CompletableFuture<String> combine() {
+        return this.normalService.combineTest();
     }
 }
